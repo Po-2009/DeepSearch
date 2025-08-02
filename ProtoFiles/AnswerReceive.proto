@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package AnswerReceive;
+option go_package = "/;AnswerReceive";
+service Dictionary {
+  rpc SendFilesCount(FilesCount) returns (UploadResponse);
+  rpc SendDictionary(stream WordEntry) returns (UploadResponse);
+  rpc Search(stream Query) returns (stream QueryResult);
+}
+
+message WordEntry {
+  string word = 1;
+  repeated FileFrequency files = 2;
+}
+
+message FilesCount {
+   int32 filesCount = 2;
+}
+
+message FileFrequency {
+  string filename = 1;
+  int32 frequency = 2;
+}
+
+message UploadResponse {
+  string message = 1;
+}
+
+message Query {
+  string query = 1;
+}
+
+message QueryResult {
+  string query = 1;
+  repeated FileMatch matches = 2;
+}
+
+message FileMatch {
+  string filename = 1;
+  float rank = 2;
+}

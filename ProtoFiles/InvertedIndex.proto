@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package InvertedIndex;
+
+option go_package = "/;InvertedIndex";
+
+service InvertedIndex {
+  rpc BuildIndex(stream IndexRequest) returns (IndexResponse);
+}
+
+message IndexRequest {
+  string filename = 1;
+  string text = 2;
+}
+
+message IndexResponse {
+  repeated WordEntry entries = 1;
+}
+
+message WordEntry {
+  string word = 1;
+  repeated FileFrequency files = 2;
+}
+
+message FileFrequency {
+  string filename = 1;
+  int32 frequency = 2;
+}

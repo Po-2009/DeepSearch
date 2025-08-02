@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package Converter;
+option go_package = "/;Converter";
+service Converter {
+  rpc ConvertFile(stream FileChunk) returns (stream ParsedText);
+}
+
+message FileChunk {
+  string filename = 1;
+  bytes content = 2;
+}
+
+message ParsedText {
+  string filename = 1;
+  string text = 2;
+}

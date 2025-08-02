@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package FileUpload;
+option go_package = "/;FileUpload";
+service FileService {
+  rpc UploadFile(stream FileChunk) returns (UploadResponse);
+  rpc SendFilesCount(FilesCount) returns (UploadResponse);
+  rpc SendQuery(stream QueryRequest) returns (stream QueryResult);
+}
+
+// Стрим чанков файла
+message FileChunk {
+  string filename = 2;
+  bytes content = 3;
+}
+
+message FilesCount {
+   int32 filesCount = 2;
+}
+
+message UploadResponse {
+  string message = 1;
+}
+
+
+
+message QueryRequest {
+  string query = 2;
+}
+
+// Один результат
+message QueryResult {
+  string query = 1;
+  repeated FileMatch matches = 2;
+}
+
+// Результат по одному файлу
+message FileMatch {
+  string filename = 1;
+  float rank = 2; // Чем ближе к 1 — тем релевантнее
+}

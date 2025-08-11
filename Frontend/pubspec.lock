@@ -90,7 +90,7 @@ packages:
     source: hosted
     version: "2.1.4"
   file_picker:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: file_picker
       sha256: "77f8e81d22d2a07d0dee2c62e1dda71dc1da73bf43bb2d45af09727406167964"
@@ -153,7 +153,7 @@ packages:
     source: hosted
     version: "2.0.0"
   grpc:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: grpc
       sha256: "30e1edae6846b163a64f6d8716e3443980fe1f7d2d1f086f011d24ea186f2582"
@@ -241,7 +241,7 @@ packages:
     source: hosted
     version: "1.16.0"
   path:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: path
       sha256: "75cca69d1490965be98c73ceaea117e8a04dd21217b37b292c9ddbec0d955bc5"
@@ -257,7 +257,7 @@ packages:
     source: hosted
     version: "2.1.8"
   protobuf:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: protobuf
       sha256: "579fe5557eae58e3adca2e999e38f02441d8aa908703854a9e0a0f47fa857731"

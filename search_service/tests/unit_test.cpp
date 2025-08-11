@@ -1,6 +1,3 @@
-//
-// Created by Polad Magerramli on 01.08.25.
-//
 #include <iostream>
 #include <gtest/gtest.h>
 #include "InvertedIndex.h"

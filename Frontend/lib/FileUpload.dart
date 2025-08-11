@@ -2,10 +2,9 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
 import 'package:grpc/grpc.dart';
-
-import 'ProtoGenerated/FileUpload//FileUpload.pbgrpc.dart';
+import 'package:path/path.dart' as path;
+import 'ProtoGenerated/FileUpload/FileUpload.pbgrpc.dart';
 
 class FileUploadClient {
   static final FileUploadClient _instance = FileUploadClient._internal();
@@ -29,7 +28,6 @@ class FileUploadClient {
 
     _stub = FileServiceClient(_channel);
   }
-
   Future<void> uploadFiles(List<PlatformFile> selectedFiles) async {
     final stream = Stream<FileChunk>.fromIterable(
       selectedFiles.map((f) => FileChunk(
@@ -71,12 +69,15 @@ class FileUploadClient {
     return results;
   }
   Future<void> _startGoService(int port) async {
-    final goBinaryPath = "/Users/poladmagerramli/CLionProjects/DeepSearch/Frontend/lib";
+    final executableDir = Platform.resolvedExecutable;
+    final appBundleDir = Directory(executableDir).parent.parent.parent;
+    final resourcesDir = Directory(path.join(appBundleDir.path, 'Resources'));
+
+    final binaryPath = path.join(resourcesDir.path, 'file_upload');
 
     final process = await Process.start(
-      "./file_upload",
+      binaryPath,
       ["--port=$port"],
-      workingDirectory: goBinaryPath,
     );
 
     process.stdout.transform(SystemEncoding().decoder).listen(print);

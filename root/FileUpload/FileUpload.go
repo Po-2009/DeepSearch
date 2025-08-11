@@ -77,8 +77,7 @@ func (s *FileUploadServer) UploadFile(streamFileUpload pbFileUpload.FileService_
 				}
 				return
 			}
-			if err := streamInvertedIndex.Send(
-				&pbInvertedIndex.IndexRequest{Filename: parsedText.Filename, Text: parsedText.Text}); err != nil {
+			if err := streamInvertedIndex.Send(&pbInvertedIndex.IndexRequest{Filename: parsedText.Filename, Text: parsedText.Text}); err != nil {
 				errs <- err
 				return
 			}

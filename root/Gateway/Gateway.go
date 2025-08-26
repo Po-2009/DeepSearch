@@ -2,14 +2,15 @@ package Gateway
 
 import (
 	"fmt"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	pbAnswerReceive "gateway_service/ProtoGenerated/AnswerReceive"
 	pbConverter "gateway_service/ProtoGenerated/Converter"
@@ -60,7 +61,7 @@ func GetGatewayInstance() *Gateway {
 			panic(err)
 		}
 		fmt.Println(os.Getwd())
-		goBinary := filepath.Join("..", "bin", "inverted_index")
+		goBinary := filepath.Join("..", "bin", "InvertedIndex")
 		cppBinary := filepath.Join("..", "bin", "search_service")
 		pythonScript := filepath.Join("..", "converter_service", "Converter.py")
 		var pythonScriptPath string

@@ -29,19 +29,51 @@ class FileUploadClient {
     _stub = FileServiceClient(_channel);
   }
   Future<void> uploadFiles(List<PlatformFile> selectedFiles) async {
-    final stream = Stream<FileChunk>.fromIterable(
-      selectedFiles.map((f) => FileChunk(
-        filename: f.name,
-        content: f.bytes ?? File(f.path!).readAsBytesSync(),
-      )),
-    );
-    for(var i in selectedFiles){
-      print(i.name);
-    }
-    final response = await _stub.uploadFile(stream);
-    print("Files uploaded: ${response.message}");
-  }
+    final controller = StreamController<FileChunk>();
 
+    // Запускаем асинхронную операцию в отдельном потоке
+    unawaited(Future(() async {
+      try {
+        for (var file in selectedFiles) {
+          // Чтение файла по частям
+          final fileStream = File(file.path!).openRead();
+          const chunkSize = 1024 * 1024; // 1 МБ
+          List<int> buffer = [];
+
+          await for (final data in fileStream) {
+            buffer.addAll(data);
+            while (buffer.length >= chunkSize) {
+              final chunk = buffer.sublist(0, chunkSize);
+              controller.add(FileChunk(
+                filename: file.name,
+                content: chunk,
+              ));
+              buffer = buffer.sublist(chunkSize);
+            }
+          }
+
+          // Отправляем оставшиеся данные
+          if (buffer.isNotEmpty) {
+            controller.add(FileChunk(
+              filename: file.name,
+              content: buffer,
+            ));
+          }
+        }
+      } catch (e) {
+        controller.addError(e);
+      } finally {
+        controller.close();
+      }
+    }));
+
+    try {
+      final response = await _stub.uploadFile(controller.stream);
+      print("Files uploaded: ${response.message}");
+    } on GrpcError catch (e) {
+      print("Error uploading files: ${e.message}");
+    }
+  }
   Future<void> uploadFilesCount(int selectedFilesLength)async{
     final response = await _stub.sendFilesCount(FilesCount(filesCount: selectedFilesLength));
     print("FilesCount uploaded: ${response.message}");

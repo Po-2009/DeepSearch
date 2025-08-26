@@ -2,11 +2,12 @@ package main
 
 import (
 	pb "gateway_service/ProtoGenerated/FileUpload"
-	"google.golang.org/grpc"
 	"log"
 	"net"
 	"os"
 	"strings"
+
+	"google.golang.org/grpc"
 )
 
 func parsePort(defaultPort string) string {
@@ -29,10 +30,8 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 	pb.RegisterFileServiceServer(grpcServer, &FileUploadServer{})
-	log.Printf("FileUploadServer listening at %v", lis.Addr())
 
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve: %v", err)
 	}
-	log.Printf("FileUploadServer listening at %v", lis.Addr())
 }

@@ -10,18 +10,31 @@ from ProtoGenerated import Converter_pb2_grpc
 import sys
 class ConverterService(Converter_pb2_grpc.ConverterServicer):
     def ConvertFile(self, request_iterator, context):
-        all_bytes = bytearray()
+        current_filename = ""
+        temp_file = None
+
         for chunk in request_iterator:
-            filename = chunk.filename
-            all_bytes.extend(chunk.content)
 
-            with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(filename)[1]) as tmp:
-                tmp.write(all_bytes)
-                temp_path = tmp.name
-            text = extract_text(temp_path)
+            if chunk.filename != current_filename:
+                if temp_file:
+                    temp_file.close()
 
-            os.remove(temp_path)
-            yield Converter_pb2.ParsedText(filename=filename, text=text)
+                    text = extract_text(temp_file.name)
+
+                    os.remove(temp_file.name)
+                    yield Converter_pb2.ParsedText(filename=current_filename, text=text)
+
+                current_filename = chunk.filename
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(current_filename)[1])
+
+            temp_file.write(chunk.content)
+        if temp_file:
+            temp_file.close()
+            text = extract_text(temp_file.name)
+            os.remove(temp_file.name)
+            yield Converter_pb2.ParsedText(filename=current_filename, text=text)
+
+
 
 def extract_text(path):
     ext = os.path.splitext(path)[1].lower()

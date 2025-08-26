@@ -8,7 +8,6 @@ service FileService {
   rpc SendQuery(stream QueryRequest) returns (stream QueryResult);
 }
 
-// Стрим чанков файла
 message FileChunk {
   string filename = 2;
   bytes content = 3;
@@ -28,14 +27,12 @@ message QueryRequest {
   string query = 2;
 }
 
-// Один результат
 message QueryResult {
   string query = 1;
   repeated FileMatch matches = 2;
 }
 
-// Результат по одному файлу
 message FileMatch {
   string filename = 1;
-  float rank = 2; // Чем ближе к 1 — тем релевантнее
+  float rank = 2;
 }

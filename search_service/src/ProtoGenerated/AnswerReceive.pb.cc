@@ -135,10 +135,11 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 
 inline constexpr FileFrequency::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
-      : filename_(
+      : frequency_{},
+        _frequency_cached_byte_size_{0},
+        filename_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
-        frequency_{0},
         _cached_size_{0} {}
 
 template <typename>
@@ -318,7 +319,7 @@ const char descriptor_table_protodef_AnswerReceive_2eproto[] ABSL_ATTRIBUTE_SECT
     "WordEntry\022\014\n\004word\030\001 \001(\t\022+\n\005files\030\002 \003(\0132\034"
     ".AnswerReceive.FileFrequency\" \n\nFilesCou"
     "nt\022\022\n\nfilesCount\030\002 \001(\005\"4\n\rFileFrequency\022"
-    "\020\n\010filename\030\001 \001(\t\022\021\n\tfrequency\030\002 \001(\005\"!\n\016"
+    "\020\n\010filename\030\001 \001(\t\022\021\n\tfrequency\030\002 \003(\005\"!\n\016"
     "UploadResponse\022\017\n\007message\030\001 \001(\t\"\026\n\005Query"
     "\022\r\n\005query\030\001 \001(\t\"G\n\013QueryResult\022\r\n\005query\030"
     "\001 \001(\t\022)\n\007matches\030\002 \003(\0132\030.AnswerReceive.F"
@@ -850,7 +851,9 @@ FileFrequency::FileFrequency(::google::protobuf::Arena* arena)
 inline PROTOBUF_NDEBUG_INLINE FileFrequency::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from, const ::AnswerReceive::FileFrequency& from_msg)
-      : filename_(arena, from.filename_),
+      : frequency_{visibility, arena, from.frequency_},
+        _frequency_cached_byte_size_{0},
+        filename_(arena, from.filename_),
         _cached_size_{0} {}
 
 FileFrequency::FileFrequency(
@@ -866,19 +869,19 @@ FileFrequency::FileFrequency(
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
-  _impl_.frequency_ = from._impl_.frequency_;
 
   // @@protoc_insertion_point(copy_constructor:AnswerReceive.FileFrequency)
 }
 inline PROTOBUF_NDEBUG_INLINE FileFrequency::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
-      : filename_(arena),
+      : frequency_{visibility, arena},
+        _frequency_cached_byte_size_{0},
+        filename_(arena),
         _cached_size_{0} {}
 
 inline void FileFrequency::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
-  _impl_.frequency_ = {};
 }
 FileFrequency::~FileFrequency() {
   // @@protoc_insertion_point(destructor:AnswerReceive.FileFrequency)
@@ -897,8 +900,20 @@ inline void* FileFrequency::PlacementNew_(const void*, void* mem,
   return ::new (mem) FileFrequency(arena);
 }
 constexpr auto FileFrequency::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(FileFrequency),
-                                            alignof(FileFrequency));
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(FileFrequency, _impl_.frequency_) +
+          decltype(FileFrequency::_impl_.frequency_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::CopyInit(
+        sizeof(FileFrequency), alignof(FileFrequency), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&FileFrequency::PlacementNew_,
+                                 sizeof(FileFrequency),
+                                 alignof(FileFrequency));
+  }
 }
 PROTOBUF_CONSTINIT
 PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
@@ -946,9 +961,9 @@ const ::_pbi::TcParseTable<1, 2, 0, 44, 2> FileFrequency::_table_ = {
     ::_pbi::TcParser::GetTable<::AnswerReceive::FileFrequency>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // int32 frequency = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(FileFrequency, _impl_.frequency_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(FileFrequency, _impl_.frequency_)}},
+    // repeated int32 frequency = 2;
+    {::_pbi::TcParser::FastV32P1,
+     {18, 63, 0, PROTOBUF_FIELD_OFFSET(FileFrequency, _impl_.frequency_)}},
     // string filename = 1;
     {::_pbi::TcParser::FastUS1,
      {10, 63, 0, PROTOBUF_FIELD_OFFSET(FileFrequency, _impl_.filename_)}},
@@ -958,9 +973,9 @@ const ::_pbi::TcParseTable<1, 2, 0, 44, 2> FileFrequency::_table_ = {
     // string filename = 1;
     {PROTOBUF_FIELD_OFFSET(FileFrequency, _impl_.filename_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
-    // int32 frequency = 2;
+    // repeated int32 frequency = 2;
     {PROTOBUF_FIELD_OFFSET(FileFrequency, _impl_.frequency_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kInt32)},
+    (0 | ::_fl::kFcRepeated | ::_fl::kPackedInt32)},
   }},
   // no aux_entries
   {{
@@ -977,8 +992,8 @@ PROTOBUF_NOINLINE void FileFrequency::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
+  _impl_.frequency_.Clear();
   _impl_.filename_.ClearToEmpty();
-  _impl_.frequency_ = 0;
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -1005,11 +1020,13 @@ PROTOBUF_NOINLINE void FileFrequency::Clear() {
             target = stream->WriteStringMaybeAliased(1, _s, target);
           }
 
-          // int32 frequency = 2;
-          if (this_._internal_frequency() != 0) {
-            target = ::google::protobuf::internal::WireFormatLite::
-                WriteInt32ToArrayWithField<2>(
-                    stream, this_._internal_frequency(), target);
+          // repeated int32 frequency = 2;
+          {
+            int byte_size = this_._impl_._frequency_cached_byte_size_.Get();
+            if (byte_size > 0) {
+              target = stream->WriteInt32Packed(
+                  2, this_._internal_frequency(), byte_size, target);
+            }
           }
 
           if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
@@ -1037,15 +1054,19 @@ PROTOBUF_NOINLINE void FileFrequency::Clear() {
 
           ::_pbi::Prefetch5LinesFrom7Lines(&this_);
            {
+            // repeated int32 frequency = 2;
+            {
+              total_size +=
+                  ::_pbi::WireFormatLite::Int32SizeWithPackedTagSize(
+                      this_._internal_frequency(), 1,
+                      this_._impl_._frequency_cached_byte_size_);
+            }
+          }
+           {
             // string filename = 1;
             if (!this_._internal_filename().empty()) {
               total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                                               this_._internal_filename());
-            }
-            // int32 frequency = 2;
-            if (this_._internal_frequency() != 0) {
-              total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
-                  this_._internal_frequency());
             }
           }
           return this_.MaybeComputeUnknownFieldsSize(total_size,
@@ -1060,11 +1081,9 @@ void FileFrequency::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::g
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
+  _this->_internal_mutable_frequency()->MergeFrom(from._internal_frequency());
   if (!from._internal_filename().empty()) {
     _this->_internal_set_filename(from._internal_filename());
-  }
-  if (from._internal_frequency() != 0) {
-    _this->_impl_.frequency_ = from._impl_.frequency_;
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -1082,8 +1101,8 @@ void FileFrequency::InternalSwap(FileFrequency* PROTOBUF_RESTRICT other) {
   auto* arena = GetArena();
   ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  _impl_.frequency_.InternalSwap(&other->_impl_.frequency_);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.filename_, &other->_impl_.filename_, arena);
-        swap(_impl_.frequency_, other->_impl_.frequency_);
 }
 
 ::google::protobuf::Metadata FileFrequency::GetMetadata() const {

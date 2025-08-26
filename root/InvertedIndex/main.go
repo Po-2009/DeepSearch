@@ -2,11 +2,12 @@ package main
 
 import (
 	pb "gateway_service/ProtoGenerated/InvertedIndex"
-	"google.golang.org/grpc"
 	"log"
 	"net"
 	"os"
 	"strings"
+
+	"google.golang.org/grpc"
 )
 
 func parsePort(defaultPort string) string {
@@ -31,10 +32,7 @@ func main() {
 	grpcServer := grpc.NewServer()
 	pb.RegisterInvertedIndexServer(grpcServer, NewInvertedIndexServer())
 
-	log.Printf("Server listening at %v", lis.Addr())
-
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve: %v", err)
 	}
-	log.Printf("Server listening at %v", lis.Addr())
 }

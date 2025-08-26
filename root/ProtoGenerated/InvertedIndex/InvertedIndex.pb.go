@@ -172,7 +172,7 @@ func (x *WordEntry) GetFiles() []*FileFrequency {
 type FileFrequency struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Filename      string                 `protobuf:"bytes,1,opt,name=filename,proto3" json:"filename,omitempty"`
-	Frequency     int32                  `protobuf:"varint,2,opt,name=frequency,proto3" json:"frequency,omitempty"`
+	Frequency     []int32                `protobuf:"varint,2,rep,packed,name=frequency,proto3" json:"frequency,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -214,11 +214,11 @@ func (x *FileFrequency) GetFilename() string {
 	return ""
 }
 
-func (x *FileFrequency) GetFrequency() int32 {
+func (x *FileFrequency) GetFrequency() []int32 {
 	if x != nil {
 		return x.Frequency
 	}
-	return 0
+	return nil
 }
 
 var File_InvertedIndex_proto protoreflect.FileDescriptor
@@ -236,7 +236,7 @@ const file_InvertedIndex_proto_rawDesc = "" +
 	"\x05files\x18\x02 \x03(\v2\x1c.InvertedIndex.FileFrequencyR\x05files\"I\n" +
 	"\rFileFrequency\x12\x1a\n" +
 	"\bfilename\x18\x01 \x01(\tR\bfilename\x12\x1c\n" +
-	"\tfrequency\x18\x02 \x01(\x05R\tfrequency2Z\n" +
+	"\tfrequency\x18\x02 \x03(\x05R\tfrequency2Z\n" +
 	"\rInvertedIndex\x12I\n" +
 	"\n" +
 	"BuildIndex\x12\x1b.InvertedIndex.IndexRequest\x1a\x1c.InvertedIndex.IndexResponse(\x01B\x11Z\x0f/;InvertedIndexb\x06proto3"

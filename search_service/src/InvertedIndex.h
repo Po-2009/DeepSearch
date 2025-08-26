@@ -2,6 +2,8 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <algorithm>
+#include <iterator>
 int getWordCount(const std::string& s) noexcept{
     std::istringstream ss(s);
     std::string w;
@@ -13,7 +15,7 @@ int getWordCount(const std::string& s) noexcept{
 }
 struct FileFrequency {
     std::string filename;
-    int frequency;
+    std::vector<int> frequency;
     bool operator==(const FileFrequency& other) const {
         return filename == other.filename;
     }
@@ -42,7 +44,9 @@ public:
         if(word_it != invertedIndex.end()){
             auto frequency_it = word_it->second.find(fileFrequency);
             if(frequency_it != word_it->second.end()){
-                int new_frequency = frequency_it->frequency + fileFrequency.frequency;
+                std::vector<int> new_frequency;
+                std::set_union(frequency_it->frequency.begin(), frequency_it->frequency.end(), fileFrequency.frequency.begin(), fileFrequency.frequency.end(), std::back_inserter(new_frequency));
+//                std::vector<int> new_frequency = frequency_it->frequency + fileFrequency.frequency;
                 word_it->second.erase(frequency_it);
                 word_it->second.insert({fileFrequency.filename,new_frequency});
             }else{
@@ -61,30 +65,65 @@ public:
         }
     }
 
-    [[nodiscard]] inline std::vector<FileMatch> searchOneQuery(const std::string& query) const noexcept{
-        std::unordered_map<std::string,std::pair<int,int>> files;
+    inline std::vector<FileMatch> searchOneQuery(const std::string& query) const noexcept{
+        if(query.empty()) return {};
+        std::unordered_map<std::string,int> files;
         int max_frequency = 0;
-        int word_count = getWordCount(query);
         std::vector<FileMatch> answer;
+        std::vector<std::string> words;
         std::istringstream gs(query);
         std::string query_word;
-        while(gs >>query_word){
+        while(gs >>query_word) {
+            words.push_back(query_word);
             auto it = invertedIndex.find(query_word);
             if(it == invertedIndex.end()){
                 return {};
             }
+        }
+        auto it = invertedIndex.find(words[0]);
+        if(words.size() == 1){
             for(auto& query_word_freg : it->second){
-                files[query_word_freg.filename].first++;
-                files[query_word_freg.filename].second += query_word_freg.frequency;
-                if(word_count == files[query_word_freg.filename].first){
-                    max_frequency = std::max(files[query_word_freg.filename].second,max_frequency);
+                files[query_word_freg.filename] += query_word_freg.frequency.size();
+                max_frequency = std::max(files[query_word_freg.filename],max_frequency);
+            }
+        }else {
+            for (auto &query_word_freg: it->second) {
+                std::string filename = query_word_freg.filename;
+                int start_idx = 0;
+                int last_word_idx = 0;
+
+                for(auto index : query_word_freg.frequency){
+                    bool finish = false;
+                    auto next_word_it = invertedIndex.find(words[last_word_idx+1])->second.find({filename,{}});
+                    if(next_word_it == invertedIndex.find(words[last_word_idx+1])->second.end()) break;
+                    for(int i = start_idx;i < next_word_it->frequency.size();i++){
+                        if(index == next_word_it->frequency[i]-last_word_idx-1){
+                            start_idx = 0;
+                            last_word_idx++;
+                            if(last_word_idx+1 == words.size()){
+                                files[query_word_freg.filename]++;
+                                max_frequency = std::max(files[query_word_freg.filename],max_frequency);
+                                last_word_idx = 0;
+                                break;
+                            }else{
+                                i = -1;
+                                next_word_it = invertedIndex.find(words[last_word_idx+1])->second.find({filename,{}});
+                                if(next_word_it == invertedIndex.find(words[last_word_idx+1])->second.end()) break;
+                            }
+                        }else if(index < next_word_it->frequency[i]-last_word_idx-1){
+                            start_idx = i;
+                            break;
+                        }else if(i == next_word_it->frequency.size()-1){
+                            finish = true;
+                            break;
+                        }
+                    }
+                    if(finish) break;
                 }
             }
         }
         for(auto& item : files){
-            if(item.second.first==word_count){
-                answer.emplace_back(item.first, float(item.second.second)/float(max_frequency));
-            }
+            answer.emplace_back(item.first, float(item.second)/float(max_frequency));
         }
         return answer;
     }

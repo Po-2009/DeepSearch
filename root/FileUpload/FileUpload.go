@@ -43,46 +43,47 @@ func (s *FileUploadServer) UploadFile(streamFileUpload pbFileUpload.FileService_
 	}
 	var wg sync.WaitGroup
 	errs := make(chan error, 2)
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		for {
-			file, err := streamFileUpload.Recv()
-			if err == io.EOF {
-				err := streamConverter.CloseSend()
+	wg.Go(
+		func() {
+			for {
+				file, err := streamFileUpload.Recv()
+				if err == io.EOF {
+					err := streamConverter.CloseSend()
+					if err != nil {
+						errs <- err
+					}
+					return
+				}
 				if err != nil {
 					errs <- err
+					return
 				}
-				return
-			}
-			if err != nil {
-				errs <- err
-				return
-			}
-			log.Printf("%s", file.Filename)
-			if err := streamConverter.Send(&pbConverter.FileChunk{Filename: file.Filename, Content: file.Content}); err != nil {
-				errs <- err
-				return
-			}
-		}
-	}()
-	go func() {
-		defer wg.Done()
-		for {
-			parsedText, err := streamConverter.Recv()
-			if err == io.EOF {
-				err := streamInvertedIndex.CloseSend()
-				if err != nil {
+				log.Printf("%s", file.Filename)
+				if err := streamConverter.Send(&pbConverter.FileChunk{Filename: file.Filename, Content: file.Content}); err != nil {
 					errs <- err
+					return
 				}
-				return
 			}
-			if err := streamInvertedIndex.Send(&pbInvertedIndex.IndexRequest{Filename: parsedText.Filename, Text: parsedText.Text}); err != nil {
-				errs <- err
-				return
+		},
+	)
+	wg.Go(
+		func() {
+			for {
+				parsedText, err := streamConverter.Recv()
+				if err == io.EOF {
+					err := streamInvertedIndex.CloseSend()
+					if err != nil {
+						errs <- err
+					}
+					return
+				}
+				if err := streamInvertedIndex.Send(&pbInvertedIndex.IndexRequest{Filename: parsedText.Filename, Text: parsedText.Text}); err != nil {
+					errs <- err
+					return
+				}
 			}
-		}
-	}()
+		},
+	)
 
 	wg.Wait()
 	close(errs)

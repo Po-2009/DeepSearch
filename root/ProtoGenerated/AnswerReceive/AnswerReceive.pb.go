@@ -120,7 +120,7 @@ func (x *FilesCount) GetFilesCount() int32 {
 type FileFrequency struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Filename      string                 `protobuf:"bytes,1,opt,name=filename,proto3" json:"filename,omitempty"`
-	Frequency     int32                  `protobuf:"varint,2,opt,name=frequency,proto3" json:"frequency,omitempty"`
+	Frequency     []int32                `protobuf:"varint,2,rep,packed,name=frequency,proto3" json:"frequency,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -162,11 +162,11 @@ func (x *FileFrequency) GetFilename() string {
 	return ""
 }
 
-func (x *FileFrequency) GetFrequency() int32 {
+func (x *FileFrequency) GetFrequency() []int32 {
 	if x != nil {
 		return x.Frequency
 	}
-	return 0
+	return nil
 }
 
 type UploadResponse struct {
@@ -376,7 +376,7 @@ const file_AnswerReceive_proto_rawDesc = "" +
 	"filesCount\"I\n" +
 	"\rFileFrequency\x12\x1a\n" +
 	"\bfilename\x18\x01 \x01(\tR\bfilename\x12\x1c\n" +
-	"\tfrequency\x18\x02 \x01(\x05R\tfrequency\"*\n" +
+	"\tfrequency\x18\x02 \x03(\x05R\tfrequency\"*\n" +
 	"\x0eUploadResponse\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\"\x1d\n" +
 	"\x05Query\x12\x14\n" +

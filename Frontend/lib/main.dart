@@ -101,7 +101,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  static const int _maxFileSize = 4 * 1024 * 1024;
+  static const int _maxFileSize = 4 * 1024 * 1024*1024;
 
   List<PlatformFile> selectedFiles = [];
   List<String> queries = [];

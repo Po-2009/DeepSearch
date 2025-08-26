@@ -18,7 +18,6 @@ public:
             for (int i = 0; i <= filesCount*2; i++) {
                 auto file = wordEntry.add_files();
                 file->set_filename("");
-                file->set_frequency(0);
             }
         }else{
             response->set_message("Error! No filesCount!");
@@ -27,8 +26,15 @@ public:
         std::cout << "SendDictionary called " << filesCount << std::endl;
         while (reader->Read(&wordEntry)) {
             std::cout << wordEntry.word() << ":" << std::endl;
+            for(auto& i : wordEntry.files()){
+                std::cout << i.filename() << ":" << std::endl;
+                for(auto& j : i.frequency()){
+                    std::cout << j << " ";
+                }
+            }
             for (auto &file: wordEntry.files()) {
-                idx.addEntry(wordEntry.word(), {file.filename(),file.frequency()});
+                idx.addEntry(wordEntry.word(), {file.filename(),std::vector<int>{file.frequency().begin(),
+                                                                                 file.frequency().end()}});
             }
             std::cout << "-----------------------------------" << std::endl;
             std::cout << "-----------------------------------" << std::endl;
@@ -47,7 +53,6 @@ public:
         AnswerReceive::Query query;
         while (stream->Read(&query)) {
             std::string query_str = query.query();
-
             pool.submit_task([this,query_str, &stream, &write_mutex] {
                 std::cout << query_str << std::endl;
                 auto results = idx.searchOneQuery(query_str);
@@ -58,12 +63,13 @@ public:
                     auto m = res.add_matches();
                     m->set_filename(match.filename);
                     m->set_rank(match.rank);
+                    std::cout << m->filename() <<" " << m->rank();
                 }
 
                 {
                     std::lock_guard<std::mutex> lock(write_mutex);
                     bool a = stream->Write(res);
-                    std::cout << res.query() << " " << a << std::endl;
+                    std::cout << res.query() <<  " " << a << std::endl;
                 }
             });
         }

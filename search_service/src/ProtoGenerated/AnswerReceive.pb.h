@@ -1022,9 +1022,27 @@ class FileFrequency final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kFilenameFieldNumber = 1,
     kFrequencyFieldNumber = 2,
+    kFilenameFieldNumber = 1,
   };
+  // repeated int32 frequency = 2;
+  int frequency_size() const;
+  private:
+  int _internal_frequency_size() const;
+
+  public:
+  void clear_frequency() ;
+  ::int32_t frequency(int index) const;
+  void set_frequency(int index, ::int32_t value);
+  void add_frequency(::int32_t value);
+  const ::google::protobuf::RepeatedField<::int32_t>& frequency() const;
+  ::google::protobuf::RepeatedField<::int32_t>* mutable_frequency();
+
+  private:
+  const ::google::protobuf::RepeatedField<::int32_t>& _internal_frequency() const;
+  ::google::protobuf::RepeatedField<::int32_t>* _internal_mutable_frequency();
+
+  public:
   // string filename = 1;
   void clear_filename() ;
   const std::string& filename() const;
@@ -1039,16 +1057,6 @@ class FileFrequency final : public ::google::protobuf::Message
   inline PROTOBUF_ALWAYS_INLINE void _internal_set_filename(
       const std::string& value);
   std::string* _internal_mutable_filename();
-
-  public:
-  // int32 frequency = 2;
-  void clear_frequency() ;
-  ::int32_t frequency() const;
-  void set_frequency(::int32_t value);
-
-  private:
-  ::int32_t _internal_frequency() const;
-  void _internal_set_frequency(::int32_t value);
 
   public:
   // @@protoc_insertion_point(class_scope:AnswerReceive.FileFrequency)
@@ -1074,8 +1082,9 @@ class FileFrequency final : public ::google::protobuf::Message
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from,
                           const FileFrequency& from_msg);
+    ::google::protobuf::RepeatedField<::int32_t> frequency_;
+    ::google::protobuf::internal::CachedSize _frequency_cached_byte_size_;
     ::google::protobuf::internal::ArenaStringPtr filename_;
-    ::int32_t frequency_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -1704,26 +1713,49 @@ inline void FileFrequency::set_allocated_filename(std::string* value) {
   // @@protoc_insertion_point(field_set_allocated:AnswerReceive.FileFrequency.filename)
 }
 
-// int32 frequency = 2;
+// repeated int32 frequency = 2;
+inline int FileFrequency::_internal_frequency_size() const {
+  return _internal_frequency().size();
+}
+inline int FileFrequency::frequency_size() const {
+  return _internal_frequency_size();
+}
 inline void FileFrequency::clear_frequency() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.frequency_ = 0;
+  _impl_.frequency_.Clear();
 }
-inline ::int32_t FileFrequency::frequency() const {
+inline ::int32_t FileFrequency::frequency(int index) const {
   // @@protoc_insertion_point(field_get:AnswerReceive.FileFrequency.frequency)
-  return _internal_frequency();
+  return _internal_frequency().Get(index);
 }
-inline void FileFrequency::set_frequency(::int32_t value) {
-  _internal_set_frequency(value);
+inline void FileFrequency::set_frequency(int index, ::int32_t value) {
+  _internal_mutable_frequency()->Set(index, value);
   // @@protoc_insertion_point(field_set:AnswerReceive.FileFrequency.frequency)
 }
-inline ::int32_t FileFrequency::_internal_frequency() const {
+inline void FileFrequency::add_frequency(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _internal_mutable_frequency()->Add(value);
+  // @@protoc_insertion_point(field_add:AnswerReceive.FileFrequency.frequency)
+}
+inline const ::google::protobuf::RepeatedField<::int32_t>& FileFrequency::frequency() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:AnswerReceive.FileFrequency.frequency)
+  return _internal_frequency();
+}
+inline ::google::protobuf::RepeatedField<::int32_t>* FileFrequency::mutable_frequency()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:AnswerReceive.FileFrequency.frequency)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_frequency();
+}
+inline const ::google::protobuf::RepeatedField<::int32_t>&
+FileFrequency::_internal_frequency() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.frequency_;
 }
-inline void FileFrequency::_internal_set_frequency(::int32_t value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.frequency_ = value;
+inline ::google::protobuf::RepeatedField<::int32_t>* FileFrequency::_internal_mutable_frequency() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.frequency_;
 }
 
 // -------------------------------------------------------------------

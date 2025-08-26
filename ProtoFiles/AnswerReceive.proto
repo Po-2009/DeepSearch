@@ -19,7 +19,7 @@ message FilesCount {
 
 message FileFrequency {
   string filename = 1;
-  int32 frequency = 2;
+  repeated int32 frequency = 2;
 }
 
 message UploadResponse {

@@ -74,13 +74,13 @@ jobs:
           channel: 'stable'
 
       - name: Build Flutter for macOS
-        working-directory: ./frontend
+        working-directory: ./Frontend
         run: flutter build macos --release
 
       - name: Package for macOS
         run: |
           mkdir -p release_package
-          cp -r frontend/build/macos/Build/Products/Release/frontend.app release_package/
+          cp -r Frontend/build/macos/Build/Products/Release/frontend.app release_package/
           cp -r ./bin release_package/frontend.app/Contents/Resources/
           zip -r deep-search-macos-${{ github.ref_name }}.zip release_package
 
@@ -102,14 +102,14 @@ jobs:
           channel: 'stable'
 
       - name: Build Flutter for Windows
-        working-directory: ./frontend
+        working-directory: ./Frontend
         run: flutter build windows --release
 
       - name: Package for Windows
         run: |
           mkdir release_package
           cp -r ./bin release_package/
-          cp -r ./frontend/build/windows/runner/Release/* release_package/
+          cp -r ./Frontend/build/windows/runner/Release/* release_package/
           Compress-Archive -Path ./release_package/* -DestinationPath deep-search-windows-${{ github.ref_name }}.zip
 
       - name: Upload Windows artifact

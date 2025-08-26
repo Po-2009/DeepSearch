@@ -1,0 +1,162 @@
+# .github/workflows/release.yml
+
+name: Create Multi-Platform Release
+
+# Запускаем этот workflow, когда создается и отправляется новый тег,
+# который выглядит как версия (например, v1.0.0, v2.3.4)
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  #----------------------------------------------------
+  # ЗАДАЧА №1: СБОРКА ДЛЯ LINUX (в .deb и .tar.gz)
+  #----------------------------------------------------
+  build-linux:
+    runs-on: ubuntu-latest # Используем виртуальную машину с Ubuntu
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install Linux dependencies
+        run: sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev
+
+      - name: Build Flutter for Linux
+        # ИЗМЕНЕНО: Указываем рабочую директорию для Flutter
+        working-directory: ./frontend
+        run: flutter build linux --release
+
+      # --- Упаковка в .tar.gz ---
+      - name: Package in .tar.gz
+        run: |
+          mkdir -p release_package/bin
+          # Копируем бэкенд-бинарники из корня проекта
+          cp -r ./bin/* release_package/bin/
+          # ИЗМЕНЕНО: Копируем собранный Flutter из правильной папки
+          cp -r ./frontend/build/linux/x64/release/bundle/* release_package/
+          tar -czvf deep-search-linux-${{ github.ref_name }}.tar.gz release_package
+
+      # --- Упаковка в .deb ---
+      - name: Package in .deb
+        run: |
+          VERSION=${{ github.ref_name }}
+          DEB_VERSION=${VERSION#v}
+          mkdir -p deb_package/DEBIAN
+          mkdir -p deb_package/usr/local/bin/deep-search
+          # Создаем control файл
+          echo "Package: deep-search" > deb_package/DEBIAN/control
+          echo "Version: ${DEB_VERSION}" >> deb_package/DEBIAN/control
+          echo "Architecture: amd64" >> deb_package/DEBIAN/control
+          echo "Maintainer: Polad Maharramli <mu312933@email.com>" >> deb_package/DEBIAN/control
+          echo "Description: DeepSearch is a high-performance local semantic search engine." >> deb_package/DEBIAN/control
+          # Копируем все бинарники (и Flutter, и бэкенд)
+          cp -r ./bin/* deb_package/usr/local/bin/deep-search/
+          # ИЗМЕНЕНО: Копируем собранный Flutter из правильной папки
+          cp -r ./frontend/build/linux/x64/release/bundle/* deb_package/usr/local/bin/deep-search/
+          dpkg-deb --build deb_package
+          mv deb_package.deb deep-search-linux-${{ github.ref_name }}.deb
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-builds
+          path: |
+            deep-search-linux-*.tar.gz
+            deep-search-linux-*.deb
+
+  #----------------------------------------------------
+  # ЗАДАЧА №2: СБОРКА ДЛЯ MACOS (в .zip с .app)
+  #----------------------------------------------------
+  build-macos:
+    runs-on: macos-latest # Используем виртуальную машину с macOS
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Build Flutter for macOS
+        # ИЗМЕНЕНО: Указываем рабочую директорию для Flutter
+        working-directory: ./frontend
+        run: flutter build macos --release
+
+      - name: Package for macOS
+        run: |
+          mkdir -p release_package
+          # ИЗМЕНЕНО: Копируем собранное .app приложение из правильной папки
+          # ВАЖНО: Убедитесь, что имя приложения 'deep_search.app' соответствует полю 'name' в pubspec.yaml
+          cp -r frontend/build/macos/Build/Products/Release/frontend.app release_package/
+          # Копируем папку с бэкенд-бинарниками ВНУТРЬ .app пакета для удобства
+          cp -r ./bin release_package/deep_search.app/Contents/Resources/
+          zip -r deep-search-macos-${{ github.ref_name }}.zip release_package
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: deep-search-macos-*.zip
+
+  #----------------------------------------------------
+  # ЗАДАЧА №3: СБОРКА ДЛЯ WINDOWS (в .zip)
+  #----------------------------------------------------
+  build-windows:
+    runs-on: windows-latest # Используем виртуальную машину с Windows
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Build Flutter for Windows
+        # ИЗМЕНЕНО: Указываем рабочую директорию для Flutter
+        working-directory: ./frontend
+        run: flutter build windows --release
+
+      - name: Package for Windows
+        run: |
+          mkdir release_package
+          # Копируем папку с бэкенд-бинарниками
+          cp -r ./bin release_package/
+          # ИЗМЕНЕНО: Копируем собранный Flutter из правильной папки
+          cp -r ./frontend/build/windows/runner/Release/* release_package/
+          Compress-Archive -Path ./release_package/* -DestinationPath deep-search-windows-${{ github.ref_name }}.zip
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: deep-search-windows-*.zip
+
+  #----------------------------------------------------
+  # ЗАДАЧА №4: СОЗДАНИЕ РЕЛИЗА
+  #----------------------------------------------------
+  create-release:
+    needs: [build-linux, build-macos, build-windows] # Запускается ПОСЛЕ всех сборок
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Даем право на создание релиза
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts # Скачиваем все артефакты в одну папку
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          # Загружаем ВСЕ файлы из папки artifacts (включая подпапки)
+          files: artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

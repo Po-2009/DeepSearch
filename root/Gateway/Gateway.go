@@ -26,7 +26,6 @@ func getFreePorts(n int) ([]int, error) {
 	for i := 0; i < n; i++ {
 		l, err := net.Listen("tcp", ":0")
 		if err != nil {
-			// Закрываем уже открытые
 			for _, l := range listeners {
 				l.Close()
 			}

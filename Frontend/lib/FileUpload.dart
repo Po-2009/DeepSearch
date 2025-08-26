@@ -17,8 +17,8 @@ class FileUploadClient {
   factory FileUploadClient() => _instance;
 
   Future<void> init() async {
-    final port = 50054;//await _getFreePort(50054);
-    //await _startGoService(port);
+    final port = await _getFreePort(50054);
+    await _startGoService(port);
 
     _channel = ClientChannel(
       'localhost',
@@ -103,6 +103,7 @@ class FileUploadClient {
   Future<void> _startGoService(int port) async {
     final executableDir = Platform.resolvedExecutable;
     final appBundleDir = Directory(executableDir).parent.parent.parent;
+    print(executableDir);
     final resourcesDir = Directory(path.join(appBundleDir.path, 'Resources'));
 
     final binaryPath = path.join(resourcesDir.path, 'file_upload');

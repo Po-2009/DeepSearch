@@ -27,15 +27,13 @@ jobs:
           sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev
 
       - name: Build Flutter for Linux
-        working-directory: ./frontend
+        working-directory: ${{ github.workspace }}/frontend
         run: flutter build linux --release
 
       - name: Package in .tar.gz
         run: |
           mkdir -p release_package/bin
-          # Копируем бэкенд-бинарники из корня проекта
           cp -r ./bin/* release_package/bin/
-          # ИЗМЕНЕНО: Копируем собранный Flutter из правильной папки
           cp -r ./frontend/build/linux/x64/release/bundle/* release_package/
           tar -czvf deep-search-linux-${{ github.ref_name }}.tar.gz release_package
 
@@ -45,15 +43,12 @@ jobs:
           DEB_VERSION=${VERSION#v}
           mkdir -p deb_package/DEBIAN
           mkdir -p deb_package/usr/local/bin/deep-search
-          # Создаем control файл
           echo "Package: deep-search" > deb_package/DEBIAN/control
           echo "Version: ${DEB_VERSION}" >> deb_package/DEBIAN/control
           echo "Architecture: amd64" >> deb_package/DEBIAN/control
           echo "Maintainer: Polad Maharramli <mu312933@email.com>" >> deb_package/DEBIAN/control
           echo "Description: DeepSearch is a high-performance local semantic search engine." >> deb_package/DEBIAN/control
-          # Копируем все бинарники (и Flutter, и бэкенд)
           cp -r ./bin/* deb_package/usr/local/bin/deep-search/
-          # ИЗМЕНЕНО: Копируем собранный Flutter из правильной папки
           cp -r ./frontend/build/linux/x64/release/bundle/* deb_package/usr/local/bin/deep-search/
           dpkg-deb --build deb_package
           mv deb_package.deb deep-search-linux-${{ github.ref_name }}.deb
@@ -85,11 +80,8 @@ jobs:
       - name: Package for macOS
         run: |
           mkdir -p release_package
-          # ИЗМЕНЕНО: Копируем собранное .app приложение из правильной папки
-          # ВАЖНО: Убедитесь, что имя приложения 'deep_search.app' соответствует полю 'name' в pubspec.yaml
           cp -r frontend/build/macos/Build/Products/Release/frontend.app release_package/
-          # Копируем папку с бэкенд-бинарниками ВНУТРЬ .app пакета для удобства
-          cp -r ./bin release_package/deep_search.app/Contents/Resources/
+          cp -r ./bin release_package/frontend.app/Contents/Resources/
           zip -r deep-search-macos-${{ github.ref_name }}.zip release_package
 
       - name: Upload macOS artifact
@@ -116,9 +108,7 @@ jobs:
       - name: Package for Windows
         run: |
           mkdir release_package
-          # Копируем папку с бэкенд-бинарниками
           cp -r ./bin release_package/
-          # ИЗМЕНЕНО: Копируем собранный Flutter из правильной папки
           cp -r ./frontend/build/windows/runner/Release/* release_package/
           Compress-Archive -Path ./release_package/* -DestinationPath deep-search-windows-${{ github.ref_name }}.zip
 

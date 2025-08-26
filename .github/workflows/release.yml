@@ -34,7 +34,7 @@ jobs:
         run: |
           mkdir -p release_package/bin
           cp -r ./bin/* release_package/bin/
-          cp -r ./frontend/build/linux/x64/release/bundle/* release_package/
+          cp -r ./Frontend/build/linux/x64/release/bundle/* release_package/
           tar -czvf deep-search-linux-${{ github.ref_name }}.tar.gz release_package
 
       - name: Package in .deb
@@ -90,37 +90,10 @@ jobs:
           name: macos-build
           path: deep-search-macos-*.zip
 
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-
-      - name: Build Flutter for Windows
-        working-directory: ./Frontend
-        run: flutter build windows --release
-
-      - name: Package for Windows
-        run: |
-          mkdir release_package
-          cp -r ./bin release_package/
-          cp -r ./Frontend/build/windows/runner/Release/* release_package/
-          Compress-Archive -Path ./release_package/* -DestinationPath deep-search-windows-${{ github.ref_name }}.zip
-
-      - name: Upload Windows artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-build
-          path: deep-search-windows-*.zip
 
 
   create-release:
-    needs: [build-linux, build-macos, build-windows]
+    needs: [build-linux, build-macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write

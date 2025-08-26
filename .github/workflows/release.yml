@@ -49,7 +49,7 @@ jobs:
           echo "Maintainer: Polad Maharramli <mu312933@email.com>" >> deb_package/DEBIAN/control
           echo "Description: DeepSearch is a high-performance local semantic search engine." >> deb_package/DEBIAN/control
           cp -r ./bin/* deb_package/usr/local/bin/deep-search/
-          cp -r ./frontend/build/linux/x64/release/bundle/* deb_package/usr/local/bin/deep-search/
+          cp -r ./Frontend/build/linux/x64/release/bundle/* deb_package/usr/local/bin/deep-search/
           dpkg-deb --build deb_package
           mv deb_package.deb deep-search-linux-${{ github.ref_name }}.deb
 

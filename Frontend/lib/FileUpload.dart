@@ -17,8 +17,13 @@ class FileUploadClient {
   factory FileUploadClient() => _instance;
 
   Future<void> init() async {
-    final port = await _getFreePort(50054);
-    await _startGoService(port);
+    var port = 0;
+    try {
+       port = await _getFreePort(50054);
+      await _startGoService(port);
+    }catch (e){
+      print(e);
+    }
 
     _channel = ClientChannel(
       'localhost',
@@ -106,6 +111,7 @@ class FileUploadClient {
     final String executableDir = path.dirname(executableFile);
 
     final binaryPath = path.join(executableDir, 'file_upload');
+    print(binaryPath);
 
     final process = await Process.start(
       binaryPath,

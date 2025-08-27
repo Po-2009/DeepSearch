@@ -101,12 +101,11 @@ class FileUploadClient {
     return results;
   }
   Future<void> _startGoService(int port) async {
-    final executableDir = Platform.resolvedExecutable;
-    final appBundleDir = Directory(executableDir).parent.parent.parent;
-    print(executableDir);
-    final resourcesDir = Directory(path.join(appBundleDir.path, 'Resources'));
+    final executableFile= Platform.resolvedExecutable;
 
-    final binaryPath = path.join(resourcesDir.path, 'file_upload');
+    final String executableDir = path.dirname(executableFile);
+
+    final binaryPath = path.join(executableDir, 'file_upload');
 
     final process = await Process.start(
       binaryPath,

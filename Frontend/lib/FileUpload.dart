@@ -36,11 +36,9 @@ class FileUploadClient {
   Future<void> uploadFiles(List<PlatformFile> selectedFiles) async {
     final controller = StreamController<FileChunk>();
 
-    // Запускаем асинхронную операцию в отдельном потоке
     unawaited(Future(() async {
       try {
         for (var file in selectedFiles) {
-          // Чтение файла по частям
           final fileStream = File(file.path!).openRead();
           const chunkSize = 1024 * 1024; // 1 МБ
           List<int> buffer = [];
@@ -57,7 +55,6 @@ class FileUploadClient {
             }
           }
 
-          // Отправляем оставшиеся данные
           if (buffer.isNotEmpty) {
             controller.add(FileChunk(
               filename: file.name,
@@ -110,7 +107,7 @@ class FileUploadClient {
 
     final String executableDir = path.dirname(executableFile);
 
-    final binaryPath = path.join(executableDir, 'file_upload');
+    final binaryPath = path.join(executableDir, 'FileUpload');
     print(binaryPath);
 
     final process = await Process.start(

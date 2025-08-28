@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strconv"
 
 	"google.golang.org/grpc"
@@ -59,31 +58,48 @@ func GetGatewayInstance() *Gateway {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println(os.Getwd())
-		goBinary := filepath.Join("..", "bin", "InvertedIndex")
-		cppBinary := filepath.Join("..", "bin", "search_service")
-		pythonScript := filepath.Join("..", "converter_service", "Converter.py")
-		var pythonScriptPath string
-
-		if runtime.GOOS == "windows" {
-			pythonScriptPath = filepath.Join("..", "converter_service", "venv", "Scripts", "python.exe")
-		} else {
-			pythonScriptPath = filepath.Join("..", "converter_service", "venv", "bin", "python")
+		executablePath, err := os.Executable()
+		if err != nil {
+			panic(err)
 		}
+		executableDir := filepath.Dir(executablePath)
+		fmt.Println("Launcher is running from:", executableDir)
 
-		goCmd := exec.Command(goBinary, fmt.Sprintf("--port=%d", ports[0]))
+		goBinaryName := "InvertedIndex"
+		cppBinaryName := "search_service"
+		pythonBinaryName := "converter_service"
+
+		//if runtime.GOOS == "windows" {
+		//	goBinaryName += ".exe"
+		//	cppBinaryName += ".exe"
+		//	pythonBinaryName += ".exe"
+		//}
+
+		goBinaryPath := filepath.Join(executableDir, goBinaryName)
+		cppBinaryPath := filepath.Join(executableDir, cppBinaryName)
+		pythonBinaryPath := filepath.Join(executableDir, pythonBinaryName)
+
+		goCmd := exec.Command(goBinaryPath, fmt.Sprintf("--port=%d", ports[0]))
 		if err := goCmd.Start(); err != nil {
-			fmt.Println("Error starting inverted_index :", err)
+			fmt.Println("Error starting InvertedIndex service:", err)
+		} else {
+			fmt.Printf("Started InvertedIndex service (PID: %d) on port %d\n", goCmd.Process.Pid, ports[0])
 		}
 
-		cppCmd := exec.Command(cppBinary, fmt.Sprintf("--port=%d", ports[1]))
+		cppCmd := exec.Command(cppBinaryPath, fmt.Sprintf("--port=%d", ports[1]))
 		if err := cppCmd.Start(); err != nil {
-			fmt.Println("Error starting search_service :", err)
+			fmt.Println("Error starting search_service:", err)
+		} else {
+			fmt.Printf("Started search_service (PID: %d) on port %d\n", cppCmd.Process.Pid, ports[1])
 		}
-		pythonCmd := exec.Command(pythonScriptPath, pythonScript, fmt.Sprintf("--port=%d", ports[2]))
+
+		pythonCmd := exec.Command(pythonBinaryPath, fmt.Sprintf("--port=%d", ports[2]))
 		if err := pythonCmd.Start(); err != nil {
-			fmt.Println("Error starting converter :", err)
+			fmt.Println("Error starting converter_service:", err)
+		} else {
+			fmt.Printf("Started converter_service (PID: %d) on port %d\n", pythonCmd.Process.Pid, ports[2])
 		}
+
 		conn, err := grpc.NewClient("localhost:"+strconv.Itoa(ports[2]), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			log.Fatalf("did not connect: %v", err)

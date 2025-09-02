@@ -63,7 +63,6 @@ func GetGatewayInstance() *Gateway {
 			panic(err)
 		}
 		executableDir := filepath.Dir(executablePath)
-		fmt.Println("Launcher is running from:", executableDir)
 
 		goBinaryName := "InvertedIndex"
 		cppBinaryName := "search_service"

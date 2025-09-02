@@ -1,66 +1,37 @@
 import grpc
 from concurrent import futures
-import tempfile
-import os
-
-import fitz
-import docx
+import io
 from ProtoGenerated import Converter_pb2
 from ProtoGenerated import Converter_pb2_grpc
 import sys
+from TextExtractFacade import TextExtractFacade
+
 class ConverterService(Converter_pb2_grpc.ConverterServicer):
+
+    def __init__(self):
+        self.text_extraction_facade = TextExtractFacade()
+        super().__init__()
+
     def ConvertFile(self, request_iterator, context):
         current_filename = ""
-        temp_file = None
+        memory_file = None
 
         for chunk in request_iterator:
-
             if chunk.filename != current_filename:
-                if temp_file:
-                    temp_file.close()
-
-                    text = extract_text(temp_file.name)
-
-                    os.remove(temp_file.name)
+                if memory_file:
+                    text = self.text_extraction_facade.extract_text(memory_file,current_filename)
                     yield Converter_pb2.ParsedText(filename=current_filename, text=text)
+                    memory_file.close()
 
                 current_filename = chunk.filename
-                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(current_filename)[1])
+                memory_file = io.BytesIO()
 
-            temp_file.write(chunk.content)
-        if temp_file:
-            temp_file.close()
-            text = extract_text(temp_file.name)
-            os.remove(temp_file.name)
+            memory_file.write(chunk.content)
+
+        if memory_file:
+            text = self.text_extraction_facade.extract_text(memory_file, current_filename)
             yield Converter_pb2.ParsedText(filename=current_filename, text=text)
-
-
-
-def extract_text(path):
-    ext = os.path.splitext(path)[1].lower()
-    if ext == ".pdf":
-        return extract_text_from_pdf(path)
-    elif ext == ".docx":
-        return extract_text_from_docx(path)
-    elif ext in [".md", ".txt"]:
-        return extract_text_from_txt(path)
-    else:
-        return "Unsupported file type"
-
-def extract_text_from_pdf(path):
-    doc = fitz.open(path)
-    text = ""
-    for page in doc.pages():
-        text += page.get_text()
-    return text
-
-def extract_text_from_docx(path):
-    doc = docx.Document(path)
-    return "\n".join(p.text for p in doc.paragraphs)
-
-def extract_text_from_txt(path):
-    with open(path, "r", encoding="utf-8", errors="ignore") as f:
-        return f.read()
+            memory_file.close()
 
 def serve():
     port = 50051

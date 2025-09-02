@@ -1,4 +1,3 @@
-#include <iostream>
 #include <gtest/gtest.h>
 #include "InvertedIndex.h"
 TEST(AddEntryTest, SameWord){
@@ -27,7 +26,6 @@ TEST(AddEntryTest, SameEntries){
 }
 
 void setupIndexForTest(InvertedIndex& index) {
-    // Файл 1: "Hello world, this is a test world."
     index.addEntry("hello", {"file1.txt", {0}});
     index.addEntry("world", {"file1.txt", {1, 5}});
     index.addEntry("this", {"file1.txt", {2}});
@@ -35,7 +33,6 @@ void setupIndexForTest(InvertedIndex& index) {
     index.addEntry("a", {"file1.txt", {4}});
     index.addEntry("test", {"file1.txt", {6}});
 
-    // Файл 2: "Hello, another test."
     index.addEntry("hello", {"file2.txt", {0}});
     index.addEntry("another", {"file2.txt", {1}});
     index.addEntry("test", {"file2.txt", {2}});
@@ -69,10 +66,8 @@ protected:
 };
 
 TEST_F(InvertedIndexTest, SingleWordQuery) {
-    // Тестируем поиск одного слова, которое встречается в нескольких файлах
     auto results = index.searchOneQuery("hello");
 
-    // Ожидаем два результата
     EXPECT_EQ(results.size(), 2);
 
     std::vector<FileMatch> expected_answer = {{"file1.txt",1.0},{"file2.txt",1.0}};
@@ -80,13 +75,10 @@ TEST_F(InvertedIndexTest, SingleWordQuery) {
 }
 
 TEST_F(InvertedIndexTest, PhraseQuery1) {
-    // Тестируем поиск фразы "hello world"
     auto results = index.searchOneQuery("hello world");
 
-    // Фраза встречается только в file1.txt
     EXPECT_EQ(results.size(), 1);
     std::vector<FileMatch> expected_answer = {{"file1.txt",1.0}};
-    // Проверяем, что результат — file1.txt с рангом 1.0 (самая высокая частота)
     EXPECT_EQ(results,expected_answer);
 }
 TEST_F(InvertedIndexTest, PhraseQuery2) {
@@ -100,27 +92,21 @@ TEST_F(InvertedIndexTest, PhraseQuery2) {
 }
 
 TEST_F(InvertedIndexTest, TwoNonSequentialWordsQuery) {
-    // Тестируем поиск двух слов, которые не идут подряд, но находятся в одном файле
-    // "this" и "test" находятся в file1.txt, но не идут подряд.
+
     auto results = index.searchOneQuery("this test");
 
-    // Если ваш алгоритм ищет только точные фразы, то результат должен быть пуст.
     EXPECT_EQ(results.size(), 0);
 }
 
 TEST_F(InvertedIndexTest, NoMatchQuery) {
-    // Тестируем запрос со словом, которого нет в индексе
     auto results = index.searchOneQuery("nonexistent");
 
-    // Ожидаем пустой вектор
     EXPECT_TRUE(results.empty());
 }
 
 TEST_F(InvertedIndexTest, EmptyQuery) {
-    // Тестируем пустой запрос
     auto results = index.searchOneQuery("");
 
-    // Ожидаем пустой вектор
     EXPECT_TRUE(results.empty());
 }
 

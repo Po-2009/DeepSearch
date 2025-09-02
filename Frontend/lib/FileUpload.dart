@@ -108,7 +108,6 @@ class FileUploadClient {
     final String executableDir = path.dirname(executableFile);
 
     final binaryPath = path.join(executableDir, 'FileUpload');
-    print(binaryPath);
 
     final process = await Process.start(
       binaryPath,

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"gateway_service/Gateway"
 	pb "gateway_service/ProtoGenerated/FileUpload"
 	"log"
 	"net"
@@ -30,7 +31,7 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 	pb.RegisterFileServiceServer(grpcServer, &FileUploadServer{})
-
+	Gateway.GetGatewayInstance()
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve: %v", err)
 	}

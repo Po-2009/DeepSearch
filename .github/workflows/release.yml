@@ -73,23 +73,73 @@ jobs:
         with:
           channel: 'stable'
 
+      - name: Install create-dmg
+        run: brew install create-dmg
+
       - name: Build Flutter for macOS
         working-directory: ./Frontend
         run: flutter build macos --release
 
-      - name: Package for macOS
+      - name: Sign, Notarize and Package
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APP_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
+          TEAM_ID: ${{ secrets.TEAM_ID }}
+          CERT_NAME: "Developer ID Application: Firangiz Gurbanova (NCV9384VA4)"
         run: |
-          mkdir -p release_package
-          cp -r Frontend/build/macos/Build/Products/Release/frontend.app release_package/
-          cp -r ./bin release_package/frontend.app/Contents/Resources/
-          zip -r deep-search-macos-${{ github.ref_name }}.zip release_package
+          echo "$MACOS_CERTIFICATE" | base64 --decode > certificate.p12
+          security create-keychain -p "$MACOS_CERTIFICATE_PASSWORD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$MACOS_CERTIFICATE_PASSWORD" build.keychain
+          security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$MACOS_CERTIFICATE_PASSWORD" build.keychain
+
+          APP_PATH="./frontend/build/macos/Build/Products/Release/frontend.app"
+          RESOURCES_DIR="$APP_PATH/Contents/Resources"
+          ENTITLEMENTS_PATH="./frontend/macos/Runner/Release.entitlements"
+          
+          mkdir -p "$RESOURCES_DIR/bin"
+          cp -R ./bin/* "$RESOURCES_DIR/bin/"
+          chmod +x "$RESOURCES_DIR/bin"/*
+
+          for binary in "$RESOURCES_DIR/bin"/*; do
+            codesign --force --timestamp --options runtime -s "$CERT_NAME" "$binary"
+          done
+          codesign --force --deep --timestamp --options runtime --entitlements "$ENTITLEMENTS_PATH" -s "$CERT_NAME" "$APP_PATH"
+          
+          ZIP_PATH_DIR="$(dirname "$APP_PATH")"
+          (cd "$ZIP_PATH_DIR" && ditto -c -k --sequesterRsrc --keepParent "frontend.app" "frontend.zip")
+          
+          xcrun notarytool submit "$ZIP_PATH_DIR/frontend.zip" --apple-id "$APPLE_ID" --password "$APP_PASSWORD" --team-id "$TEAM_ID" --wait
+
+          for attempt in $(seq 1 5); do
+            if xcrun stapler staple "$APP_PATH"; then
+              break
+            elif [ "$attempt" -lt 5 ]; then
+              sleep 60
+            else
+              exit 1
+            fi
+          done
+
+          DMG_NAME="DeepSearch_${{ github.ref_name }}_macOS.dmg"
+          create-dmg \
+            --volname "DeepSearch Installer" \
+            --window-pos 200 120 --window-size 600 420 \
+            --icon-size 128 --icon "frontend.app" 170 250 \
+            --hide-extension "frontend.app" \
+            --app-drop-link 430 250 \
+            "$DMG_NAME" \
+            "$APP_PATH"
+          echo "DMG_PATH=$DMG_NAME" >> $GITHUB_ENV
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
           name: macos-build
-          path: deep-search-macos-*.zip
-
+          path: ${{ env.DMG_PATH }}
 
 
   create-release:

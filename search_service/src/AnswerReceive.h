@@ -1,4 +1,4 @@
-#include <grpcpp/grpcpp.h>
+#include <grpc++/grpc++.h>
 #include "ProtoGenerated/AnswerReceive.grpc.pb.h"
 #include <mutex>
 #include <thread>

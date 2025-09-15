@@ -2,7 +2,5 @@
 # To keep your changes, remove these comment lines, but the plugin won't be able to modify your requirements
 
 requirements:
-  - "grpc/1.69.0"
-  - "protobuf/5.27.0"
+  - "grpc/1.72.0"
   - "gtest/1.16.0"
-  - "abseil/20240116.1"

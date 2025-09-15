@@ -19,25 +19,25 @@ type FileUploadServer struct {
 func (s *FileUploadServer) UploadFile(streamFileUpload pbFileUpload.FileService_UploadFileServer) error {
 	ctx := context.TODO()
 	gateway := Gateway.GetGatewayInstance()
-	streamConverter, err := gateway.GetConverterClient().ConvertFile(ctx)
-	if err != nil {
-		err := streamFileUpload.SendAndClose(&pbFileUpload.UploadResponse{
-			Message: "Err!",
-		})
-		return err
-	}
 	streamInvertedIndex, err := gateway.GetInvertedIndexClient().BuildIndex(ctx)
 	if err != nil {
 		err := streamFileUpload.SendAndClose(&pbFileUpload.UploadResponse{
-			Message: "Err!",
+			Message: "Err! no InvertedIndex!",
 		})
 		return err
 	}
 	streamAnswerReceive, err := gateway.GetAnswerReceiveClient().SendDictionary(ctx)
 	if err != nil {
+		err := streamFileUpload.SendAndClose(&pbFileUpload.UploadResponse{
+			Message: "Eror! no AnswerRecieve!",
+		})
+		return err
+	}
+	streamConverter, err := gateway.GetConverterClient().ConvertFile(ctx)
+	if err != nil {
 		log.Printf("%v", err)
 		err := streamFileUpload.SendAndClose(&pbFileUpload.UploadResponse{
-			Message: "Eror!",
+			Message: "Err! no converter!",
 		})
 		return err
 	}

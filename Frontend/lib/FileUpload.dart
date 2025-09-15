@@ -17,7 +17,7 @@ class FileUploadClient {
   factory FileUploadClient() => _instance;
 
   Future<void> init() async {
-    var port = 0;
+    var port = 50054;
     try {
        port = await _getFreePort(50054);
       await _startGoService(port);
@@ -103,11 +103,10 @@ class FileUploadClient {
     return results;
   }
   Future<void> _startGoService(int port) async {
-    final executableFile= Platform.resolvedExecutable;
-
-    final String executableDir = path.dirname(executableFile);
-
-    final binaryPath = path.join(executableDir, 'FileUpload');
+    final String executableFile = Platform.resolvedExecutable;
+    final String macosDir = path.dirname(executableFile);
+    final String contentsDir = path.dirname(macosDir);
+    final String binaryPath = path.join(contentsDir, 'Resources', 'bin', "FileUpload");
 
     final process = await Process.start(
       binaryPath,

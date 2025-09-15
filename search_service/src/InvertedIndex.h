@@ -30,6 +30,8 @@ struct FileFrequencyHash {
 struct FileMatch {
     std::string filename;
     float rank;
+    FileMatch() = default;
+    FileMatch(const std::string& file, float r) : filename(file), rank(r) {}
     bool operator==(const FileMatch& other) const {
         return filename == other.filename && std::abs(rank - other.rank) < 0.001f;
     }

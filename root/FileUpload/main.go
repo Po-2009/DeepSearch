@@ -28,8 +28,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}
-
-	grpcServer := grpc.NewServer()
+	serverOptions := []grpc.ServerOption{
+		grpc.MaxRecvMsgSize(1024 * 1024 * 20),
+	}
+	grpcServer := grpc.NewServer(serverOptions...)
 	pb.RegisterFileServiceServer(grpcServer, &FileUploadServer{})
 	Gateway.GetGatewayInstance()
 	if err := grpcServer.Serve(lis); err != nil {

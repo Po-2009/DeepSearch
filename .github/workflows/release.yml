@@ -96,7 +96,7 @@ jobs:
           security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple: -s -k "$MACOS_CERTIFICATE_PASSWORD" build.keychain
 
-          APP_PATH="./frontend/build/macos/Build/Products/Release/frontend.app"
+          APP_PATH="./frontend/build/macos/Build/Products/Release/DeepSearch.app"
           RESOURCES_DIR="$APP_PATH/Contents/Resources"
           ENTITLEMENTS_PATH="./frontend/macos/Runner/Release.entitlements"
           

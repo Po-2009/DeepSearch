@@ -40,7 +40,6 @@ struct FileMatch {
 class InvertedIndex {
 public:
     InvertedIndex() = default;
-public:
     inline void addEntry(const std::string& word, const FileFrequency& fileFrequency) noexcept{
         auto word_it = invertedIndex.find(word);
         if(word_it != invertedIndex.end()){
@@ -128,6 +127,10 @@ public:
             answer.emplace_back(item.first, float(item.second)/float(max_frequency));
         }
         return answer;
+    }
+    inline void clear(){
+        invertedIndex.clear();
+        std::cout << "Cleaned!" << invertedIndex.size() << std::endl;
     }
 
 private:

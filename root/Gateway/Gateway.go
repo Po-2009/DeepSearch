@@ -1,12 +1,13 @@
 package Gateway
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"time"
 
 	"google.golang.org/grpc"
@@ -16,16 +17,46 @@ import (
 	pbConverter "gateway_service/ProtoGenerated/Converter"
 	pbInvertedIndex "gateway_service/ProtoGenerated/InvertedIndex"
 
-	"log"
 	"sync"
 )
 
+func pipeAndPrefixOutput(cmd *exec.Cmd, prefix string, wg *sync.WaitGroup) error {
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return fmt.Errorf("error creating stdout pipe for %s: %w", prefix, err)
+	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return fmt.Errorf("error creating stderr pipe for %s: %w", prefix, err)
+	}
+
+	readPipe := func(pipe io.Reader, pipeName string) {
+		defer wg.Done()
+		scanner := bufio.NewScanner(pipe)
+		for scanner.Scan() {
+			fmt.Printf("[%s:%s] %s\n", prefix, pipeName, scanner.Text())
+		}
+	}
+
+	wg.Add(2)
+	go readPipe(stdout, "stdout")
+	go readPipe(stderr, "stderr")
+
+	return nil
+}
+
 func waitForGrpcServer(host string, port int, maxAttempts int, interval time.Duration) (*grpc.ClientConn, error) {
+	const maxMessageSize = 20 * 1024 * 1024
+
+	dialOptions := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMessageSize)),
+	}
 	var conn *grpc.ClientConn
 	var err error
 	for i := 0; i < maxAttempts; i++ {
 		conn, err = grpc.NewClient(fmt.Sprintf("%s:%d", host, port),
-			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			dialOptions...,
 		)
 		if err == nil {
 			fmt.Printf("gRPC server is ready on %s:%d\n", host, port)
@@ -88,16 +119,16 @@ func GetGatewayInstance() *Gateway {
 		cppBinaryName := "search_service"
 		pythonBinaryName := "converter_service"
 
-		if runtime.GOOS == "windows" {
-			goBinaryName += ".exe"
-			cppBinaryName += ".exe"
-			pythonBinaryName += ".exe"
-		}
+		var wg sync.WaitGroup
 
 		goBinaryPath := filepath.Join(executableDir, goBinaryName)
 		cppBinaryPath := filepath.Join(executableDir, cppBinaryName)
 		pythonBinaryPath := filepath.Join(executableDir, pythonBinaryName)
 		pythonCmd := exec.Command(pythonBinaryPath, fmt.Sprintf("--port=%d", ports[2]))
+		if err := pipeAndPrefixOutput(pythonCmd, "converter_service", &wg); err != nil {
+			fmt.Println("Error setting up output for converter_service:", err)
+			return
+		}
 		if err := pythonCmd.Start(); err != nil {
 			fmt.Println("Error starting converter_service:", err)
 		} else {
@@ -106,31 +137,28 @@ func GetGatewayInstance() *Gateway {
 		conn, err := waitForGrpcServer("localhost", ports[2], 120, 60*time.Second)
 
 		goCmd := exec.Command(goBinaryPath, fmt.Sprintf("--port=%d", ports[0]))
+		if err := pipeAndPrefixOutput(goCmd, "InvertedIndex", &wg); err != nil {
+			fmt.Println("Error setting up output for InvertedIndex service:", err)
+			return
+		}
 		if err := goCmd.Start(); err != nil {
 			fmt.Println("Error starting InvertedIndex service:", err)
 		} else {
 			fmt.Printf("Started InvertedIndex service (PID: %d) on port %d\n", goCmd.Process.Pid, ports[0])
 		}
+		conn3, err := waitForGrpcServer("localhost", ports[0], 120, 60*time.Second)
 
 		cppCmd := exec.Command(cppBinaryPath, fmt.Sprintf("--port=%d", ports[1]))
+		if err := pipeAndPrefixOutput(cppCmd, "search_service", &wg); err != nil {
+			fmt.Println("Error setting up output for search_service:", err)
+			return
+		}
 		if err := cppCmd.Start(); err != nil {
 			fmt.Println("Error starting search_service:", err)
 		} else {
 			fmt.Printf("Started search_service (PID: %d) on port %d\n", cppCmd.Process.Pid, ports[1])
 		}
-
-		//conn, err := grpc.NewClient("localhost:"+strconv.Itoa(ports[2]), grpc.WithTransportCredentials(insecure.NewCredentials()))
-		if err != nil {
-			log.Fatalf("did not connect: %v", err)
-		}
-		conn2, err := waitForGrpcServer("localhost", ports[1], 120, 500*time.Millisecond)
-		if err != nil {
-			log.Fatalf("did not connect: %v", err)
-		}
-		conn3, err := waitForGrpcServer("localhost", ports[0], 120, 500*time.Millisecond)
-		if err != nil {
-			log.Fatalf("did not connect: %v", err)
-		}
+		conn2, err := waitForGrpcServer("localhost", ports[1], 120, 60*time.Second)
 
 		serverInstance = &Gateway{
 			converterClient:     pbConverter.NewConverterClient(conn),

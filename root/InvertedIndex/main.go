@@ -28,8 +28,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}
-
-	grpcServer := grpc.NewServer()
+	serverOptions := []grpc.ServerOption{
+		grpc.MaxSendMsgSize(1024 * 1024 * 20),
+	}
+	grpcServer := grpc.NewServer(serverOptions...)
 	pb.RegisterInvertedIndexServer(grpcServer, NewInvertedIndexServer())
 
 	if err := grpcServer.Serve(lis); err != nil {

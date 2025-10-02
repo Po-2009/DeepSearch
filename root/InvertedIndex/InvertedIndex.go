@@ -2,7 +2,6 @@ package main
 
 import (
 	"io"
-	"log"
 	"strings"
 	"sync"
 	"unicode"
@@ -123,10 +122,8 @@ func (s *InvertedIndexServer) BuildIndex(stream pb.InvertedIndex_BuildIndexServe
 	s.dictMutex.Lock()
 	responseEntries := make([]*pb.WordEntry, 0, len(s.freqDictionary))
 	for word, fileEntries := range s.freqDictionary {
-		log.Printf("%s", word)
 		pbFileFreqs := make([]*pb.FileFrequency, 0, len(fileEntries))
 		for _, fileEntry := range fileEntries {
-			log.Printf("%s : %i", fileEntry.Filename, fileEntry.Count)
 			pbFileFreqs = append(pbFileFreqs, &pb.FileFrequency{
 				Filename:  fileEntry.Filename,
 				Frequency: fileEntry.Count,

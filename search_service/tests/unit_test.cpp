@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "InvertedIndex.h"
+#include "unordered_set"
 TEST(AddEntryTest, SameWord){
     InvertedIndex idx;
     std::string word = "hello";

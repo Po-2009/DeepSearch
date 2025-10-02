@@ -2,60 +2,49 @@
 #include "ProtoGenerated/AnswerReceive.grpc.pb.h"
 #include <mutex>
 #include <thread>
-#include <future>
-#include "google/protobuf/wire_format.h"
 #include "include_files/BS_thread_pool.hpp"
 #include "InvertedIndex.h"
 
-class AnswerReceiveServer final : public AnswerReceive::Dictionary::Service{
+class AnswerReceiveServer final : public AnswerReceive::Dictionary::Service {
 public:
-    AnswerReceiveServer()  =default;
+    AnswerReceiveServer() = default;
     ~AnswerReceiveServer() final = default;
-    inline grpc::Status SendDictionary(grpc::ServerContext* context, grpc::ServerReader<AnswerReceive::WordEntry>* reader, AnswerReceive::UploadResponse* response) final{
+
+    grpc::Status SendDictionary(grpc::ServerContext* context, grpc::ServerReader<AnswerReceive::WordEntry>* reader, AnswerReceive::UploadResponse* response) final {
         AnswerReceive::WordEntry wordEntry;
-        wordEntry.set_word("");
-        if(filesCount != 0) {
-            for (int i = 0; i <= filesCount*2; i++) {
-                auto file = wordEntry.add_files();
-                file->set_filename("");
-            }
-        }else{
-            response->set_message("Error! No filesCount!");
+
+        std::lock_guard<std::mutex> lock(data_mutex_);
+
+        if (filesCount == 0) {
+            response->set_message("Error! filesCount is not set!");
             return grpc::Status::CANCELLED;
         }
-        std::cout << "SendDictionary called " << filesCount << std::endl;
+
         while (reader->Read(&wordEntry)) {
-            std::cout << wordEntry.word() << ":" << std::endl;
-            for(auto& i : wordEntry.files()){
-                std::cout << i.filename() << ":" << std::endl;
-                for(auto& j : i.frequency()){
-                    std::cout << j << " ";
-                }
-            }
             for (auto &file: wordEntry.files()) {
-                idx.addEntry(wordEntry.word(), {file.filename(),std::vector<int>{file.frequency().begin(),
-                                                                                 file.frequency().end()}});
+                idx.addEntry(wordEntry.word(), {file.filename(), std::vector<int>{file.frequency().begin(), file.frequency().end()}});
             }
-            std::cout << "-----------------------------------" << std::endl;
-            std::cout << "-----------------------------------" << std::endl;
-            std::cout << "-----------------------------------" << std::endl;
         }
+
         response->set_message("Successfully imported dictionary!");
-        std::cout << "End" << std::endl;
+        std::cout << "Dictionary successfully loaded." << std::endl;
         return grpc::Status::OK;
     }
 
-    inline grpc::Status Search(grpc::ServerContext* context, grpc::ServerReaderWriter<AnswerReceive::QueryResult,AnswerReceive::Query>* stream) final{
-        BS::thread_pool pool(std::thread::hardware_concurrency());  // создаём пул потоков с числом потоков равным числу ядер
+grpc::Status Search(grpc::ServerContext* context, grpc::ServerReaderWriter<AnswerReceive::QueryResult, AnswerReceive::Query>* stream) final {
 
-        std::mutex write_mutex;  // чтобы не было гонки при вызове stream->Write()
+    std::vector<std::future<AnswerReceive::QueryResult>> futures;
 
-        AnswerReceive::Query query;
-        while (stream->Read(&query)) {
-            std::string query_str = query.query();
-            pool.submit_task([this,query_str, &stream, &write_mutex] {
-                std::cout << query_str << std::endl;
-                auto results = idx.searchOneQuery(query_str);
+    AnswerReceive::Query query;
+    while (stream->Read(&query)) {
+        std::string query_str = query.query();
+        futures.emplace_back(
+            pool_.submit_task([this, query_str] {
+                std::vector<FileMatch> results;
+                {
+                    std::lock_guard<std::mutex> lock(data_mutex_);
+                    results = idx.searchOneQuery(query_str);
+                }
 
                 AnswerReceive::QueryResult res;
                 res.set_query(query_str);
@@ -63,28 +52,37 @@ public:
                     auto m = res.add_matches();
                     m->set_filename(match.filename);
                     m->set_rank(match.rank);
-                    std::cout << m->filename() <<" " << m->rank();
                 }
-
-                {
-                    std::lock_guard<std::mutex> lock(write_mutex);
-                    bool a = stream->Write(res);
-                    std::cout << res.query() <<  " " << a << std::endl;
-                }
-            });
-        }
-        pool.wait();
-        return grpc::Status::OK;
+                return res;
+            })
+        );
     }
-    inline grpc::Status SendFilesCount(grpc::ServerContext* context, const AnswerReceive::FilesCount* request, AnswerReceive::UploadResponse* response) final{
+
+
+    for (auto& fut : futures) {
+        AnswerReceive::QueryResult res = fut.get();
+        {
+             std::lock_guard<std::mutex> lock(stream_write_mutex_);
+            stream->Write(res);
+        }
+    }
+
+    return grpc::Status::OK;
+}
+
+    grpc::Status SendFilesCount(grpc::ServerContext* context, const AnswerReceive::FilesCount* request, AnswerReceive::UploadResponse* response) final {
+        std::lock_guard<std::mutex> lock(data_mutex_);
         filesCount = request->filescount();
-        response->set_message("Success!");
-        std::cout << response->message() << std::endl;
+        idx.clear();
+
+        response->set_message("Success! filesCount set to " + std::to_string(filesCount));
         return grpc::Status::OK;
     }
 
 private:
+    BS::thread_pool<> pool_{std::thread::hardware_concurrency()};
+    std::mutex stream_write_mutex_;
     InvertedIndex idx;
-    std::mutex mtx;
     int32_t filesCount = 0;
+    std::mutex data_mutex_;
 };

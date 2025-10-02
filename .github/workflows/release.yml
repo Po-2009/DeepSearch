@@ -114,9 +114,9 @@ jobs:
           codesign --force --deep --timestamp --options runtime --entitlements "$ENTITLEMENTS_PATH" -s "$CERT_NAME" "$APP_PATH"
           
           ZIP_PATH_DIR="$(dirname "$APP_PATH")"
-          (cd "$ZIP_PATH_DIR" && ditto -c -k --sequesterRsrc --keepParent "frontend.app" "frontend.zip")
+          (cd "$ZIP_PATH_DIR" && ditto -c -k --sequesterRsrc --keepParent "DeepSearch.app" "DeepSearch.zip")
           
-          xcrun notarytool submit "$ZIP_PATH_DIR/frontend.zip" --apple-id "$APPLE_ID" --password "$APP_PASSWORD" --team-id "$TEAM_ID" --wait
+          xcrun notarytool submit "$ZIP_PATH_DIR/DeepSearch.zip" --apple-id "$APPLE_ID" --password "$APP_PASSWORD" --team-id "$TEAM_ID" --wait
 
           for attempt in $(seq 1 5); do
             if xcrun stapler staple "$APP_PATH"; then
@@ -132,8 +132,8 @@ jobs:
           create-dmg \
             --volname "DeepSearch Installer" \
             --window-pos 200 120 --window-size 600 420 \
-            --icon-size 128 --icon "frontend.app" 170 250 \
-            --hide-extension "frontend.app" \
+            --icon-size 128 --icon "DeepSearch.app" 170 250 \
+            --hide-extension "DeepSearch.app" \
             --app-drop-link 430 250 \
             "$DMG_NAME" \
             "$APP_PATH"

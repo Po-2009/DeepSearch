@@ -76,18 +76,10 @@ jobs:
       - name: Install create-dmg
         run: brew install create-dmg
 
-      - name: Build Flutter for macOS
-        working-directory: ./Frontend
-        run: flutter build macos --release
-
-      - name: Sign, Notarize and Package
+      - name: Import Code-Signing Certificates
         env:
           MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
           MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APP_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
-          TEAM_ID: ${{ secrets.TEAM_ID }}
-          CERT_NAME: "Developer ID Application: Firangiz Gurbanova (NCV9384VA4)"
         run: |
           echo "$MACOS_CERTIFICATE" | base64 --decode > certificate.p12
           security create-keychain -p "$MACOS_CERTIFICATE_PASSWORD" build.keychain
@@ -95,6 +87,18 @@ jobs:
           security unlock-keychain -p "$MACOS_CERTIFICATE_PASSWORD" build.keychain
           security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple: -s -k "$MACOS_CERTIFICATE_PASSWORD" build.keychain
+
+      - name: Build Flutter for macOS
+        working-directory: ./Frontend
+        run: flutter build macos --release
+
+      - name: Sign, Notarize and Package
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APP_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
+          TEAM_ID: ${{ secrets.TEAM_ID }}
+          CERT_NAME: "Developer ID Application: Firangiz Gurbanova (NCV9384VA4)"
+        run: |
 
           APP_PATH="./frontend/build/macos/Build/Products/Release/DeepSearch.app"
           RESOURCES_DIR="$APP_PATH/Contents/Resources"

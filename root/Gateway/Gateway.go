@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"google.golang.org/grpc"
@@ -118,7 +119,11 @@ func GetGatewayInstance() *Gateway {
 		goBinaryName := "InvertedIndex"
 		cppBinaryName := "search_service"
 		pythonBinaryName := "converter_service"
-
+		if runtime.GOOS == "windows" {
+			goBinaryName += ".exe"
+			cppBinaryName += ".exe"
+			pythonBinaryName += ".exe"
+		}
 		var wg sync.WaitGroup
 
 		goBinaryPath := filepath.Join(executableDir, goBinaryName)

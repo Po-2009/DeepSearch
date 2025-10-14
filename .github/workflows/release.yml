@@ -97,10 +97,21 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APP_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
           TEAM_ID: ${{ secrets.TEAM_ID }}
+          CERT_NAME: "Developer ID Application: Firangiz Gurbanova (NCV9384VA4)"
         run: |
 
           APP_PATH="./frontend/build/macos/Build/Products/Release/DeepSearch.app"
+          RESOURCES_DIR="$APP_PATH/Contents/Resources"
+          ENTITLEMENTS_PATH="./frontend/macos/Runner/Release.entitlements"
           
+          mkdir -p "$RESOURCES_DIR/bin"
+          cp -R ./bin/* "$RESOURCES_DIR/bin/"
+          chmod +x "$RESOURCES_DIR/bin"/*
+
+          for binary in "$RESOURCES_DIR/bin"/*; do
+            codesign --force --timestamp --options runtime -s "$CERT_NAME" "$binary"
+          done
+          codesign --force --deep --timestamp --options runtime --entitlements "$ENTITLEMENTS_PATH" -s "$CERT_NAME" "$APP_PATH"
           ZIP_PATH_DIR="$(dirname "$APP_PATH")"
           (cd "$ZIP_PATH_DIR" && ditto -c -k --sequesterRsrc --keepParent "DeepSearch.app" "DeepSearch.zip")
           

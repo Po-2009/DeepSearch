@@ -101,4 +101,4 @@ flutter_launcher_icons:
     generate: trueq
   macos:
     generate: true
-  image_path: "assets/DeepSearch.png"
+  image_path: "assets/DeepSearchLogo.png"

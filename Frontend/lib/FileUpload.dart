@@ -92,9 +92,8 @@ class FileUploadClient {
         print("Files uploaded: ${response.message}");
       }
     } on GrpcError catch (e) {
-      if (kDebugMode) {
-        print("Error uploading files: ${e.message}");
-      }
+      print("Error uploading files: ${e.message}");
+
     }
   }
   Future<void> uploadFilesCount(int selectedFilesLength)async{
@@ -157,13 +156,16 @@ class FileUploadClient {
     final String contentsDir = path.dirname(macosDir);
     final String binaryPath = path.join(contentsDir, 'Resources', 'bin', "FileUpload");
 
-    final process = await Process.start(
-      binaryPath,
-      ["--port=$port"],
-    );
-
-    process.stdout.transform(SystemEncoding().decoder).listen(print);
-    process.stderr.transform(SystemEncoding().decoder).listen(print);
+    try {
+      final process = await Process.start(
+        binaryPath,
+        ["--port=$port"],
+      );
+      process.stdout.transform(SystemEncoding().decoder).listen(print);
+      process.stderr.transform(SystemEncoding().decoder).listen(print);
+    } catch (e){
+      print(e.toString());
+    }
   }
 
   Future<int> _getFreePort(int defaultPort) async {
